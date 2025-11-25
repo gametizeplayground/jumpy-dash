@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jumpy Dash</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Press Start 2P', cursive; }
+        
+        /* Home Screen */
+        #home-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #6A5ACD 0%, #9370DB 50%, #FFB347 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .game-title {
+            font-size: 48px;
+            color: #FFD700;
+            text-shadow: 6px 6px 0px #8B4513, 8px 8px 0px rgba(0,0,0,0.3);
+            margin-bottom: 60px;
+            text-align: center;
+            animation: bounce 1s ease-in-out infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        .home-btn {
+            background: #FF6347;
+            border: none;
+            color: white;
+            padding: 20px 50px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 20px;
+            margin: 15px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            box-shadow: 6px 6px 0px #8B0000;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .home-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 8px 8px 0px #8B0000;
+        }
+        .home-btn:active {
+            transform: translate(3px, 3px);
+            box-shadow: 3px 3px 0px #8B0000;
+        }
+        .music-btn {
+            background: #4CAF50;
+            box-shadow: 6px 6px 0px #2E7D32;
+            font-size: 14px;
+            padding: 15px 30px;
+        }
+        .music-btn:hover {
+            box-shadow: 8px 8px 0px #2E7D32;
+        }
+        .music-btn:active {
+            box-shadow: 3px 3px 0px #2E7D32;
+        }
+        .music-btn.off {
+            background: #757575;
+            box-shadow: 6px 6px 0px #424242;
+        }
+        .music-btn.off:hover {
+            box-shadow: 8px 8px 0px #424242;
+        }
+        .music-btn.off:active {
+            box-shadow: 3px 3px 0px #424242;
+        }
+        
+        /* Game UI */
+        #ui-container {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: white;
+            pointer-events: none;
+            text-shadow: 4px 4px 0px #333;
+            display: none;
+        }
+        .score-label {
+            font-size: 24px;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        #score {
+            font-size: 40px;
+            color: #fff;
+        }
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            display: none;
+            border: 4px solid white;
+        }
+        button {
+            background: #FF6347;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0px #8B0000;
+        }
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #8B0000;
+        }
+        
+        /* In-game music toggle */
+        #music-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            box-shadow: 4px 4px 0px #2E7D32;
+            z-index: 50;
+            display: none;
+        }
+        #music-toggle.off {
+            background: #757575;
+            box-shadow: 4px 4px 0px #424242;
+        }
+    </style>
+    <!-- Import Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <!-- Home Screen -->
+    <div id="home-screen">
+        <h1 class="game-title">JUMPY DASH</h1>
+        <button class="home-btn" id="play-btn">PLAY</button>
+        <button class="home-btn music-btn off" id="music-btn">🎵 MUSIC: OFF</button>
+    </div>
+    
+    <!-- Game UI -->
+    <div id="ui-container">
+        <div class="score-label">SCORE</div>
+        <div id="score">0</div>
+    </div>
+    <button id="music-toggle">🎵 ON</button>
+    <div id="game-over">
+        <h1>GAME OVER</h1>
+        <p>SCORE: <span id="final-score">0</span></p>
+        <button id="restart-btn">RETRY</button>
+    </div>
+    <script type="module" src="game.js"></script>
+</body>
+</html>
