@@ -171,7 +171,6 @@ function init() {
 function startGame() {
     createPlayer();
     resetGame();
-    animate();
 }
 
 function resetGame() {
