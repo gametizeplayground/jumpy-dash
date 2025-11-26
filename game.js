@@ -69,6 +69,12 @@ function init() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
+    
+    // Ensure canvas is touch-friendly
+    renderer.domElement.style.touchAction = 'none';
+    renderer.domElement.style.webkitTouchCallout = 'none';
+    renderer.domElement.style.webkitUserSelect = 'none';
+    renderer.domElement.style.userSelect = 'none';
 
     // Lights - Brighter for vibrant colors
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.1); 
@@ -99,9 +105,15 @@ function init() {
     document.addEventListener('mouseup', onInputEnd, false);
     document.addEventListener('touchend', onInputEnd, false);
 
-    restartBtn.addEventListener('click', (e) => {
+    const handleRestart = (e) => {
         e.stopPropagation(); // Prevent jump on button click
         resetGame();
+    };
+    restartBtn.addEventListener('click', handleRestart);
+    restartBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleRestart(e);
     });
 
     clock = new THREE.Clock();
@@ -131,8 +143,8 @@ function init() {
     bgMusic.loop = true;
     bgMusic.preload = 'auto';
     
-    // Home screen button listeners
-    playBtn.addEventListener('click', () => {
+    // Home screen button listeners (click and touch)
+    const handlePlay = () => {
         homeScreen.style.display = 'none';
         uiContainer.style.display = 'block';
         musicToggle.style.display = 'block';
@@ -141,9 +153,15 @@ function init() {
         if (musicEnabled && bgMusic) {
             bgMusic.play().catch(e => console.log("Music play failed:", e));
         }
+    };
+    playBtn.addEventListener('click', handlePlay);
+    playBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handlePlay();
     });
     
-    musicBtn.addEventListener('click', () => {
+    const handleMusicBtn = () => {
         musicEnabled = !musicEnabled;
         updateMusicButton();
         if (musicEnabled && bgMusic) {
@@ -151,9 +169,15 @@ function init() {
         } else if (bgMusic) {
             bgMusic.pause();
         }
+    };
+    musicBtn.addEventListener('click', handleMusicBtn);
+    musicBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleMusicBtn();
     });
     
-    musicToggle.addEventListener('click', (e) => {
+    const handleMusicToggle = (e) => {
         e.stopPropagation();
         musicEnabled = !musicEnabled;
         updateMusicToggle();
@@ -162,6 +186,12 @@ function init() {
         } else if (bgMusic) {
             bgMusic.pause();
         }
+    };
+    musicToggle.addEventListener('click', handleMusicToggle);
+    musicToggle.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleMusicToggle(e);
     });
     
     // Start animation loop (but don't start game yet)
@@ -252,7 +282,14 @@ function createPlayer() {
 
 // --- Input Handling ---
 function onInputStart(event) {
-    if (event.target.id === 'restart-btn') return; 
+    // Ignore touches/clicks on buttons
+    const target = event.target;
+    if (target.id === 'restart-btn' || target.id === 'play-btn' || 
+        target.id === 'music-btn' || target.id === 'music-toggle' ||
+        target.closest('button')) {
+        return;
+    }
+    
     if (event.type === 'touchstart') event.preventDefault(); 
     
     if (!gameActive) return;
@@ -270,6 +307,14 @@ function onInputStart(event) {
 }
 
 function onInputEnd(event) {
+    // Ignore touches/clicks on buttons
+    const target = event.target;
+    if (target.id === 'restart-btn' || target.id === 'play-btn' || 
+        target.id === 'music-btn' || target.id === 'music-toggle' ||
+        target.closest('button')) {
+        return;
+    }
+    
     if (!gameActive) return;
     
     if (player.isJumping && player.verticalVelocity > 5) {
