@@ -45,7 +45,10 @@ const COLOR_GROUND_TOP = 0xFFE4B5; // Vibrant Yellow-Orange (NavajoWhite)
 const COLOR_GROUND_INNER = 0xFFCFA1; // Slightly Darker/Different for inner square
 const COLOR_GROUND_SIDE = 0xFF9C59; // Vibrant Orange
 const COLOR_GROUND_FRONT = 0xFF6600; // Brighter Orange for Front Face
+const COLOR_GROUND_DIRT = 0x8B4513; // Darker dirt color for lower part of sides (SaddleBrown)
 const COLOR_PLAYER = 0xFF0000; // Bright Red
+const COLOR_NINJA_MASK = 0x000000; // Black for ninja mask
+const COLOR_NINJA_BELT = 0x2F2F2F; // Dark gray for belt
 const COLOR_OBSTACLE = 0x778899; // LightSlateGray
 const COLOR_TREE_LEAVES = 0x00C957; // Vibrant Green
 const COLOR_TREE_TRUNK = 0x8B4513; // SaddleBrown
@@ -219,7 +222,7 @@ function resetGame() {
     speed = minSpeed; // Reset to start speed
     lastObstacleZ = -999;
     
-    player.position.set(0, 0.7, 0);
+    player.position.set(0, 0.8, 0); // Raised to sit on top of ground tiles (ground top is at y=0.5) 
     player.currentLane = 0; 
     player.verticalVelocity = 0;
     player.isJumping = false;
@@ -234,13 +237,70 @@ function resetGame() {
 
 // --- Player ---
 function createPlayer() {
-    const geometry = new THREE.BoxGeometry(0.6, 0.6, 0.6);
-    const material = new THREE.MeshStandardMaterial({ 
+    // Create player as a group to add ninja decorations
+    player = new THREE.Group();
+    
+    // 1. Main red cube body
+    const bodyGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+    const bodyMaterial = new THREE.MeshStandardMaterial({ 
         color: COLOR_PLAYER, 
         emissive: COLOR_PLAYER, 
         emissiveIntensity: 0.3 
     });
-    player = new THREE.Mesh(geometry, material);
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.castShadow = true;
+    body.receiveShadow = true;
+    player.add(body);
+    
+    // 2. Ninja mask on front face (black)
+    const maskSize = 0.5;
+    const maskGeometry = new THREE.PlaneGeometry(maskSize, maskSize * 0.6);
+    const maskMaterial = new THREE.MeshStandardMaterial({ 
+        color: COLOR_NINJA_MASK,
+        emissive: COLOR_NINJA_MASK,
+        emissiveIntensity: 0.1
+    });
+    const mask = new THREE.Mesh(maskGeometry, maskMaterial);
+    mask.position.set(0, 0.1, 0.31); // Front face, slightly up
+    mask.rotation.y = 0;
+    player.add(mask);
+    
+    // 3. Ninja headband (horizontal black stripe on top)
+    const headbandGeometry = new THREE.BoxGeometry(0.5, 0.1, 0.5);
+    const headbandMaterial = new THREE.MeshStandardMaterial({ 
+        color: COLOR_NINJA_MASK,
+        emissive: COLOR_NINJA_MASK,
+        emissiveIntensity: 0.1
+    });
+    const headband = new THREE.Mesh(headbandGeometry, headbandMaterial);
+    headband.position.set(0, 0.35, 0);
+    player.add(headband);
+    
+    // 4. Ninja belt (horizontal stripe around middle)
+    const beltGeometry = new THREE.BoxGeometry(0.65, 0.08, 0.65);
+    const beltMaterial = new THREE.MeshStandardMaterial({ 
+        color: COLOR_NINJA_BELT,
+        emissive: COLOR_NINJA_BELT,
+        emissiveIntensity: 0.1
+    });
+    const belt = new THREE.Mesh(beltGeometry, beltMaterial);
+    belt.position.set(0, -0.1, 0);
+    player.add(belt);
+    
+    // 5. Ninja shuriken on side (small decorative element)
+    const shurikenSize = 0.15;
+    const shurikenGeometry = new THREE.PlaneGeometry(shurikenSize, shurikenSize);
+    const shurikenMaterial = new THREE.MeshStandardMaterial({ 
+        color: COLOR_NINJA_MASK,
+        emissive: COLOR_NINJA_MASK,
+        emissiveIntensity: 0.1,
+        side: THREE.DoubleSide
+    });
+    const shuriken = new THREE.Mesh(shurikenGeometry, shurikenMaterial);
+    shuriken.rotation.y = Math.PI / 2;
+    shuriken.position.set(0.31, 0.2, 0); // Right side
+    player.add(shuriken);
+    
     player.castShadow = true;
     player.receiveShadow = true;
     player.position.y = 0.8; 
@@ -381,6 +441,50 @@ function createBlock(x, y, z, colorTop, colorSide) {
     dot.position.y = BLOCK_SIZE / 2 + 0.02;
     dot.receiveShadow = true;
     group.add(dot);
+
+    // 4. Lower dirt layer on front face (-X, left visible side)
+    const frontDirtHeight = BLOCK_SIZE * 0.5; // Lower half
+    const frontDirtGeo = new THREE.PlaneGeometry(BLOCK_SIZE, frontDirtHeight);
+    const frontDirtMat = new THREE.MeshStandardMaterial({ 
+        color: COLOR_GROUND_DIRT,
+        emissive: COLOR_GROUND_DIRT,
+        emissiveIntensity: 0.15,
+        side: THREE.DoubleSide
+    });
+    const frontDirt = new THREE.Mesh(frontDirtGeo, frontDirtMat);
+    frontDirt.rotation.y = Math.PI / 2; // Face towards -X (left)
+    frontDirt.position.set(-BLOCK_SIZE / 2 - 0.01, -BLOCK_SIZE / 4, 0); // Lower half, slightly forward
+    frontDirt.receiveShadow = true;
+    group.add(frontDirt);
+
+    // 5. Lower dirt layer on side face (+Z, right visible side)
+    const sideDirtHeight = BLOCK_SIZE * 0.5; // Lower half
+    const sideDirtGeo = new THREE.PlaneGeometry(BLOCK_SIZE, sideDirtHeight);
+    const sideDirtMat = new THREE.MeshStandardMaterial({ 
+        color: COLOR_GROUND_DIRT,
+        emissive: COLOR_GROUND_DIRT,
+        emissiveIntensity: 0.15,
+        side: THREE.DoubleSide
+    });
+    const sideDirt = new THREE.Mesh(sideDirtGeo, sideDirtMat);
+    sideDirt.rotation.y = 0; // Face towards +Z (front/right)
+    sideDirt.position.set(0, -BLOCK_SIZE / 4, BLOCK_SIZE / 2 + 0.01); // Lower half, slightly forward
+    sideDirt.receiveShadow = true;
+    group.add(sideDirt);
+
+    // 6. Lower dirt layer on right face (+X, for decorative right blocks)
+    const rightDirt = new THREE.Mesh(frontDirtGeo.clone(), frontDirtMat.clone());
+    rightDirt.rotation.y = -Math.PI / 2; // Face towards +X (right)
+    rightDirt.position.set(BLOCK_SIZE / 2 + 0.01, -BLOCK_SIZE / 4, 0); // Lower half, slightly forward
+    rightDirt.receiveShadow = true;
+    group.add(rightDirt);
+
+    // 7. Lower dirt layer on back face (-Z, for completeness)
+    const backDirt = new THREE.Mesh(sideDirtGeo.clone(), sideDirtMat.clone());
+    backDirt.rotation.y = Math.PI; // Face towards -Z (back)
+    backDirt.position.set(0, -BLOCK_SIZE / 4, -BLOCK_SIZE / 2 - 0.01); // Lower half, slightly forward
+    backDirt.receiveShadow = true;
+    group.add(backDirt);
 
     scene.add(group);
     return group;
